@@ -58,7 +58,7 @@ async function startBot() {
                 removeWindowOpenListeners(); // Gỡ bỏ tất cả các listeners của 'windowOpen'
             }
             console.log(`Trạng thái spawn sau khi cập nhật: ${spawnState}`); // Ghi log trạng thái spawn
-            bot.setMaxListeners(1000000); // Tăng giới hạn listeners cho sự kiện 'windowOpen'
+            bot.setMaxListeners(5); // Tăng giới hạn listeners cho sự kiện 'windowOpen'
             bot.chat('/login thegold780'); // Gửi lệnh đăng nhập
             await sleep(4000); // Chờ 4 giây để đảm bảo đăng nhập được xử lý
             console.log('Đã nhập mật khẩu'); // Ghi log
