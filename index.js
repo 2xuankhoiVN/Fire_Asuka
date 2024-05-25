@@ -51,6 +51,7 @@ async function startBot() {
 
         // Lắng nghe sự kiện khi bot xuất hiện trong thế giới
         bot.on('spawn', async () => {
+            shouldRestart = false;
             console.log(`Trạng thái spawn trước khi cập nhật: ${spawnState}`);
             spawnCount++;
             if (spawnCount === 2) {
