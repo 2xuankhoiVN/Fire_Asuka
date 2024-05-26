@@ -1,7 +1,6 @@
 const mineflayer = require('mineflayer');
 
 let bot = null;
-let shouldRestart = false;
 let spawnState = 0; // Biến để lưu trạng thái spawn
 let spawnCount = 0; // Biến để đếm số lần spawn
 let activationInterval = null; // Biến để lưu interval của activateItemContinuously
@@ -12,7 +11,7 @@ function sleep(ms) {
 }
 
 // Hàm để tạo và khởi động bot
-async function startBot() {
+function startBot() {
     return new Promise((resolve, reject) => {
         bot = mineflayer.createBot({
             host: 'vinamc.net',
@@ -23,7 +22,7 @@ async function startBot() {
         });
 
         function onWindowOpen(window) {
-            console.log('Đã vào sever'); // Ghi log
+            console.log('Đã vào server'); // Ghi log
             bot.clickWindow(11, 0, 0); // Click vào slot 11 trong cửa sổ
         }
 
@@ -51,7 +50,6 @@ async function startBot() {
 
         // Lắng nghe sự kiện khi bot xuất hiện trong thế giới
         bot.on('spawn', async () => {
-            shouldRestart = false;
             console.log(`Trạng thái spawn trước khi cập nhật: ${spawnState}`);
             spawnCount++;
             if (spawnCount === 2) {
@@ -77,14 +75,12 @@ async function startBot() {
         // Lắng nghe sự kiện lỗi
         bot.on('error', (err) => {
             console.error(`Bot gặp lỗi: ${err}`);
-            shouldRestart = true; // Đặt cờ để yêu cầu khởi động lại
             reject(err); // Từ chối promise khi gặp lỗi
         });
 
         // Lắng nghe sự kiện kết thúc (ngắt kết nối)
         bot.on('end', () => {
             console.log('Bot đã ngắt kết nối');
-            shouldRestart = true; // Đặt cờ để yêu cầu khởi động lại
             spawnState = 0; // Đặt lại trạng thái spawn về 0 khi ngắt kết nối
             spawnCount = 0; // Đặt lại biến đếm spawn về 0
             stopActivateItemContinuously(); // Dừng kích hoạt liên tục khi ngắt kết nối
@@ -93,8 +89,7 @@ async function startBot() {
 
         // Lắng nghe sự kiện đăng nhập để hoàn thành promise
         bot.once('login', () => {
-            console.log('Bot đã đăng nhập thành công');
-            shouldRestart = false; // Đặt lại cờ shouldRestart
+            console.log(`Bot đã đăng nhập thành công với tên: ${bot.username}`);
             resolve(); // Hoàn thành promise khi đăng nhập thành công
         });
     });
@@ -105,11 +100,14 @@ async function startBotWithRetries() {
     while (true) {
         try {
             await startBot();
-            await sleep(10000); // Chờ 10 giây để kiểm tra nếu bot kết nối thành công
-            // Nếu bot đã kết nối và đang chạy, thoát khỏi vòng lặp
-            if (!shouldRestart) {
-                console.log('Bot đã kết nối thành công.');
-                break;
+            console.log('Bot đã kết nối thành công.');
+            // Thêm một vòng lặp để theo dõi tình trạng kết nối và tự động thử lại nếu bị ngắt kết nối
+            while (true) {
+                if (!bot || !bot._client.socket || bot._client.socket.readyState !== 1) { // Kiểm tra nếu bot bị ngắt kết nối
+                    console.log('Bot bị ngắt kết nối. Thử kết nối lại...');
+                    break; // Thoát vòng lặp bên trong để thử kết nối lại
+                }
+                await sleep(3000); // Kiểm tra mỗi 3 giây
             }
         } catch (err) {
             console.error(`Lỗi khi khởi động bot: ${err}`);
@@ -121,3 +119,5 @@ async function startBotWithRetries() {
 
 // Khởi động bot với logic retry
 startBotWithRetries();
+
+console.log('Bạn đang dùng index 7');
